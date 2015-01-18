@@ -8,20 +8,30 @@ import android.graphics.Rect;
  * Created by Rick on 2015/1/9.
  */
 public class Guard {
-    private int x;
-    private int y;
+    private int mX;
+    private int mY;
     private GameView gameView;
-    private Bitmap bmp;
-    private int width;
+    private Bitmap mBmp;
+    private int mWidth;
     private boolean isAlive;
 
     public Guard(GameView gameView, Bitmap bmp, int xPos, int yPos, int width) {
-        this.width = width;
+        this.mWidth = width;
         this.gameView = gameView;
-        this.bmp = bmp;
-        this.x = xPos;
-        this.y = yPos;
+        this.mBmp = bmp;
+        this.mX = xPos;
+        this.mY = yPos;
         this.isAlive = true;
+    }
+
+    public int getWidth()
+    {
+        return this.mWidth;
+    }
+
+    public int getY()
+    {
+        return this.mY;
     }
 
     public boolean isAlive()
@@ -31,7 +41,7 @@ public class Guard {
 
     public boolean isDead(int pos)
     {
-        if(pos >= y && pos <= (y+width) )
+        if(pos >= mY && pos <= (mY + mWidth) )
         {
             isAlive = false;
             return true;
@@ -41,8 +51,8 @@ public class Guard {
 
     public void onDraw(Canvas canvas) {
 //        Rect dst = new Rect(x, y, x + width, y + width);
-        Rect dst = new Rect( y, x, y + width,x + width);
-        canvas.drawBitmap(bmp, null, dst, null);
+        Rect dst = new Rect( mY, mX, mY + mWidth,mX + mWidth);
+        canvas.drawBitmap(mBmp, null, dst, null);
 //        canvas.drawBitmap(bmp, y, x, null);
     }
 }

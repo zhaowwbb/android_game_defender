@@ -1,8 +1,9 @@
 package com.game.rick.defender;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 
 import android.content.Context;
@@ -16,6 +17,12 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.game.rick.defender.enemy.Basketball;
+import com.game.rick.defender.enemy.Enemy;
+import com.game.rick.defender.enemy.EnemyConst;
+import com.game.rick.defender.enemy.EnemyFactory;
+import com.game.rick.defender.enemy.Soccer;
+
 public class GameView extends SurfaceView {
     private GameLoopThread gameLoopThread;
     private List<TempSprite> temps = new ArrayList<TempSprite>();
@@ -26,14 +33,14 @@ public class GameView extends SurfaceView {
     private Bitmap bmpGuard;
     private Bitmap bmpBird;
 
-    private Bitmap bmpHeart;
-    private Bitmap bmpSoccer;
-    private Bitmap bmpDeath;
-    private Bitmap bmpGhost;
-    private Bitmap bmpDiamond;
-    private Bitmap bmpPepsi;
-    private Bitmap bmpBasketBall;
-    private Bitmap bmpComputer;
+    private Bitmap mBmpHeart;
+    private Bitmap mBmpSoccer;
+    private Bitmap mBmpDeath;
+    private Bitmap mBmpGhost;
+    private Bitmap mBmpDiamond;
+    private Bitmap mBmpPepsi;
+    private Bitmap mBmpBasketBall;
+    private Bitmap mBmpComputer;
 
     private List<Enemy> enemies = new ArrayList<Enemy>();
     private boolean isGameOver;
@@ -42,12 +49,78 @@ public class GameView extends SurfaceView {
     private int guardBorder;
     private int mLevel;
     private int guardIconWidth;
-    private final int HELP_INTERVAL = 5000;
+    private final int HELP_INTERVAL = 3000;
     private final int LEVEL_INTERVAL = 3000;
     private long mStartTime;
     private boolean mLevelPassFlag;
     private long mLevelPassTime;
     private boolean mAllLevelPassFlag;
+    private EnemyFactory mFactory;
+    private Map<String, List<EnemyItem>> mLevelMap;
+
+    //Level and  enemiese
+    private final static String[][] levels = {
+            {},
+            /** level id, enemy type, enemy number, is random position    */
+            {"1", EnemyConst.DIAMOND, "20", Boolean.toString(false)},
+            {"2", EnemyConst.DIAMOND, "20", Boolean.toString(true), "30"},
+            {"3", EnemyConst.HEART, "30", Boolean.toString(false)},
+            {"4", EnemyConst.HEART, "40", Boolean.toString(true), "30"},
+
+            {"5", EnemyConst.HEART, "10", Boolean.toString(true)},
+            {"5", EnemyConst.PEPSI, "20", Boolean.toString(true)},
+
+            {"6", EnemyConst.HEART, "8", Boolean.toString(true), "30"},
+            {"6", EnemyConst.PEPSI, "20", Boolean.toString(false), "30"},
+            {"6", EnemyConst.SOCCER, "2", Boolean.toString(true)},
+
+            {"7", EnemyConst.PEPSI, "20", Boolean.toString(true), "30"},
+            {"7", EnemyConst.SOCCER, "5", Boolean.toString(true)},
+            {"7", EnemyConst.HEART, "8", Boolean.toString(true), "30"},
+            {"7", EnemyConst.BASKETBALL, "2", Boolean.toString(true)},
+
+            {"8", EnemyConst.DIAMOND, "10", Boolean.toString(true), "30"},
+            {"8", EnemyConst.HEART, "10", Boolean.toString(true), "30"},
+            {"8", EnemyConst.PEPSI, "10", Boolean.toString(true), "30"},
+            {"8", EnemyConst.SOCCER, "10", Boolean.toString(true) },
+            {"8", EnemyConst.BASKETBALL, "10", Boolean.toString(true)},
+
+            {"9", EnemyConst.PEPSI, "20", Boolean.toString(true), "30"},
+            {"9", EnemyConst.SOCCER, "20", Boolean.toString(true) },
+            {"9", EnemyConst.BASKETBALL, "20", Boolean.toString(true)},
+
+            {"10", EnemyConst.PEPSI, "50", Boolean.toString(true), "30"},
+            {"10", EnemyConst.SOCCER, "30", Boolean.toString(true) },
+            {"10", EnemyConst.BASKETBALL, "30", Boolean.toString(true)}
+    };
+
+    private class EnemyItem
+    {
+        String mType;
+        int mCount;
+        boolean mIsRandomPos;
+        int mSpeed;
+        public EnemyItem(String type, int count, boolean isRandom)
+        {
+            this.mType = type;
+            this.mCount = count;
+            this.mIsRandomPos = isRandom;
+            this.mSpeed = EnemyConst.NO_SPEED;
+        }
+
+        public EnemyItem(String type, int count, boolean isRandom, int speed)
+        {
+            this.mType = type;
+            this.mCount = count;
+            this.mIsRandomPos = isRandom;
+            this.mSpeed = speed;
+        }
+
+        public String toString()
+        {
+            return "[mType=" + mType + ",mCount=" + mCount + ",mIsRandomPos=" +  mIsRandomPos + ",mSpeed= " + mSpeed + "]";
+        }
+    }
 
     public GameView(Context context) {
         super(context);
@@ -90,69 +163,111 @@ public class GameView extends SurfaceView {
         bmpSkull = BitmapFactory.decodeResource(getResources(), R.drawable.skull);
         bmpBird = BitmapFactory.decodeResource(getResources(), R.drawable.bird);
 
-        bmpHeart = BitmapFactory.decodeResource(getResources(), R.drawable.heart);
-        bmpSoccer = BitmapFactory.decodeResource(getResources(), R.drawable.soccer);
-        bmpDeath = BitmapFactory.decodeResource(getResources(), R.drawable.death);
-        bmpGhost = BitmapFactory.decodeResource(getResources(), R.drawable.ghost);
-        bmpDiamond = BitmapFactory.decodeResource(getResources(), R.drawable.diamond);
-        bmpPepsi = BitmapFactory.decodeResource(getResources(), R.drawable.pepsi);
-        bmpBasketBall = BitmapFactory.decodeResource(getResources(), R.drawable.basketball);
-        bmpComputer = BitmapFactory.decodeResource(getResources(), R.drawable.computer);
+        mBmpHeart = BitmapFactory.decodeResource(getResources(), R.drawable.heart);
+        mBmpSoccer = BitmapFactory.decodeResource(getResources(), R.drawable.soccer);
+        mBmpDeath = BitmapFactory.decodeResource(getResources(), R.drawable.death);
+        mBmpGhost = BitmapFactory.decodeResource(getResources(), R.drawable.ghost);
+        mBmpDiamond = BitmapFactory.decodeResource(getResources(), R.drawable.diamond);
+        mBmpPepsi = BitmapFactory.decodeResource(getResources(), R.drawable.pepsi);
+        mBmpBasketBall = BitmapFactory.decodeResource(getResources(), R.drawable.basketball);
+        mBmpComputer = BitmapFactory.decodeResource(getResources(), R.drawable.computer);
     }
 
-    private void addEnemies(Bitmap bmp, int count, int speed)
+    public Bitmap getBitMap(String name)
     {
-        Random rnd = new Random();
-        int xPos = 0;
-        int yPos = 0;
-        int xWidth = this.getWidth() - bmp.getWidth();
-        int columns = this.getWidth()/bmp.getWidth();
+        Bitmap bmp = mBmpHeart;
+        if(EnemyConst.HEART.equals(name))
+        {
+            bmp = mBmpHeart;
+        }
+        else if(EnemyConst.DIAMOND.equals(name))
+        {
+            bmp = mBmpDiamond;
+        }
+        else if(EnemyConst.SOCCER.equals(name))
+        {
+            bmp = mBmpSoccer;
+        }
+        else if(EnemyConst.BASKETBALL.equals(name))
+        {
+            bmp = mBmpBasketBall;
+        }
+        else if(EnemyConst.GHOST.equals(name))
+        {
+            bmp = mBmpGhost;
+        }
+        else if(EnemyConst.DEATH.equals(name))
+        {
+            bmp = mBmpDeath;
+        }
+        else if(EnemyConst.PEPSI.equals(name))
+        {
+            bmp = mBmpPepsi;
+        }
+        else if(EnemyConst.COMPUTER.equals(name))
+        {
+            bmp = mBmpComputer;
+        }
+        return bmp;
+    }
 
-        for(int i = 0; i < count; i++) {
-            xPos = 0 - i * bmp.getHeight();
-            //int xPos = rnd.nextInt(xWidth);
-            int next = rnd.nextInt(columns);
-            yPos = bmp.getWidth() * next;
-            if (yPos > xWidth) {
-                yPos = xWidth;
+    private void initLevels()
+    {
+        mLevelMap = new HashMap<String, List<EnemyItem>>();
+        for(int i = 1; i < levels.length; i++)
+        {
+            String[] strs = levels[i];
+            String levelStr = strs[0];
+            String type = strs[1];
+            int count = Integer.parseInt(strs[2]);
+            boolean isRandom = Boolean.parseBoolean(strs[3]);
+            EnemyItem item = null;
+            if(strs.length > 4)
+            {
+                int speed = Integer.parseInt(strs[4]);
+                item = new EnemyItem(type, count, isRandom, speed);
             }
-            enemies.add(new Enemy(this, bmp, xPos, yPos, speed));
+            else
+            {
+                item = new EnemyItem(type, count, isRandom);
+            }
+
+            List<EnemyItem> list = mLevelMap.get(levelStr);
+            if(null == list)
+            {
+                list = new ArrayList<EnemyItem>();
+                mLevelMap.put(levelStr, list);
+            }
+            list.add(item);
         }
     }
 
     private void createEnemy(int level)
     {
-        if(level == 1)
+        String levelStr = String.valueOf(level);
+        temps.clear();
+        mFactory.resetEnemies();
+        List<EnemyItem> list = mLevelMap.get(levelStr);
+        if(list != null)
         {
-            addEnemies(bmpHeart, 10, 5);
-        }
-        else if(level == 2)
-        {
-            addEnemies(bmpSoccer, 20, 10);
-        }
-        else if(level == 3)
-        {
-            addEnemies(bmpDiamond, 30, 15);
-        }
-        else if(level == 4)
-        {
-            addEnemies(bmpBasketBall, 40, 20);
-        }
-        else if(level == 5)
-        {
-            addEnemies(bmpComputer, 50, 25);
-        }
-        else if(level == 6)
-        {
-            addEnemies(bmpPepsi, 60, 30);
-        }
-        else if(level == 7)
-        {
-            addEnemies(bmpGhost, 70, 35);
-        }
-        else if(level == 8)
-        {
-            addEnemies(bmpDeath, 80, 40);
+            for(int i = 0; i < list.size(); i++)
+            {
+                EnemyItem item = list.get(i);
+                for(int j = 0; j < item.mCount; j++)
+                {
+                    Enemy e = null;
+                    if(item.mSpeed == EnemyConst.NO_SPEED)
+                    {
+                        e = mFactory.createEnemy(item.mType, item.mIsRandomPos);
+                    }
+                    else
+                    {
+                        e = mFactory.createEnemy(item.mType, item.mIsRandomPos, item.mSpeed);
+                    }
+
+                    enemies.add(e);
+                }
+            }
         }
         else
         {
@@ -167,6 +282,8 @@ public class GameView extends SurfaceView {
         mLevel = 1;
         mLevelPassFlag = false;
         mAllLevelPassFlag = false;
+        mFactory = EnemyFactory.getInstance(this);
+        initLevels();
         createEnemy(mLevel);
         createGuards();
     }
@@ -186,16 +303,21 @@ public class GameView extends SurfaceView {
         return x >= guardBorder;
     }
 
-    public boolean killGuard(int y)
+    public boolean killGuard(Enemy e)
     {
         boolean ret = false;
         for(int i = guards.size() - 1; i >= 0; i--)
         {
             Guard g = guards.get(i);
-            if(g.isDead(y))
-            {
-                guards.remove(g);
-            }
+            int attackLeft = e.getY();
+            int attackRight = e.getY() + e.getWidth();
+
+            int guardLeft = g.getY();
+            int guardRight = g.getY() + g.getWidth() ;
+
+            if(attackRight < guardLeft)continue;
+            if(attackLeft > guardRight)continue;
+            guards.remove(g);
         }
 
         if(guards.size() == 0)
@@ -221,30 +343,6 @@ public class GameView extends SurfaceView {
         }
         this.guardBorder = this.getHeight() - guardIconWidth;
     }
-
-//    private void createEnemy() {
-//        Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.ghost);
-//        int count = 100;
-//        Random rnd = new Random();
-//        int xPos = 0;
-//        int yPos = 0;
-//        int xWidth = this.getWidth() - bmp.getWidth();
-////        int rPos = this.getWidth() - bmp.getWidth();
-//        for(int i = 0; i < count; i++)
-//        {
-//            xPos = 0-i*bmp.getHeight();
-//            //int xPos = rnd.nextInt(xWidth);
-//            yPos = (i*bmp.getHeight())%(this.getWidth());
-//            if(yPos > xWidth)
-//            {
-//                yPos = xWidth;
-//            }
-//            enemies.add(new Enemy(this, bmp, xPos, yPos, 10));
-//        }
-////        xPos = this.getHeight() - bmp.getHeight();
-////        yPos = this.getWidth() - bmp.getWidth();
-////        enemies.add(new Enemy(this, bmp, xPos, yPos, 5));
-//    }
 
     private boolean printHelp(Canvas canvas)
     {
