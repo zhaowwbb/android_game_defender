@@ -30,7 +30,7 @@ public class GameView extends SurfaceView {
     private Bitmap bmpBlood;
     private Bitmap bmpGens;
     private Bitmap bmpSkull;
-    private Bitmap bmpGuard;
+    private Bitmap mBmpGuard;
     private Bitmap bmpBird;
 
     private Bitmap mBmpHeart;
@@ -41,9 +41,12 @@ public class GameView extends SurfaceView {
     private Bitmap mBmpPepsi;
     private Bitmap mBmpBasketBall;
     private Bitmap mBmpComputer;
+    private Bitmap mRedo;
+    private Bitmap mReset;
+
 
     private List<Enemy> enemies = new ArrayList<Enemy>();
-    private boolean isGameOver;
+    private boolean mIsGameOver;
     private int totalGuards;
     private List<Guard> guards = new ArrayList<Guard>();
     private int guardBorder;
@@ -58,11 +61,15 @@ public class GameView extends SurfaceView {
     private EnemyFactory mFactory;
     private Map<String, List<EnemyItem>> mLevelMap;
 
+    private int mTop = 80;
+
     //Level and  enemiese
     private final static String[][] levels = {
             {},
             /** level id, enemy type, enemy number, is random position    */
             {"1", EnemyConst.DIAMOND, "20", Boolean.toString(false)},
+            {"1", EnemyConst.BASKETBALL, "2", Boolean.toString(false)},
+
             {"2", EnemyConst.DIAMOND, "20", Boolean.toString(true), "30"},
             {"3", EnemyConst.HEART, "30", Boolean.toString(false)},
             {"4", EnemyConst.HEART, "40", Boolean.toString(true), "30"},
@@ -171,6 +178,10 @@ public class GameView extends SurfaceView {
         mBmpPepsi = BitmapFactory.decodeResource(getResources(), R.drawable.pepsi);
         mBmpBasketBall = BitmapFactory.decodeResource(getResources(), R.drawable.basketball);
         mBmpComputer = BitmapFactory.decodeResource(getResources(), R.drawable.computer);
+        mBmpGuard = BitmapFactory.decodeResource(getResources(), R.drawable.halloween);
+
+        mRedo = BitmapFactory.decodeResource(getResources(), R.drawable.reset);
+        mReset = BitmapFactory.decodeResource(getResources(), R.drawable.close);
     }
 
     public Bitmap getBitMap(String name)
@@ -245,8 +256,11 @@ public class GameView extends SurfaceView {
     private void createEnemy(int level)
     {
         String levelStr = String.valueOf(level);
+        mFactory = EnemyFactory.getInstance(this);
         temps.clear();
+        enemies.clear();
         mFactory.resetEnemies();
+
         List<EnemyItem> list = mLevelMap.get(levelStr);
         if(list != null)
         {
@@ -277,25 +291,26 @@ public class GameView extends SurfaceView {
 
     private void init()
     {
-        isGameOver = false;
+        mIsGameOver = false;
         totalGuards = 0;
         mLevel = 1;
         mLevelPassFlag = false;
         mAllLevelPassFlag = false;
-        mFactory = EnemyFactory.getInstance(this);
+
         initLevels();
         createEnemy(mLevel);
         createGuards();
+        mStartTime = System.currentTimeMillis();
     }
 
     public void setGameOver(boolean isOver)
     {
-        this.isGameOver = isOver;
+        this.mIsGameOver = isOver;
     }
 
     public boolean isGameOver()
     {
-        return this.isGameOver;
+        return this.mIsGameOver;
     }
 
     public boolean hitGuard(int x)
@@ -322,15 +337,16 @@ public class GameView extends SurfaceView {
 
         if(guards.size() == 0)
         {
-            isGameOver = true;
+            mIsGameOver = true;
         }
         return ret;
     }
 
     private void createGuards()
     {
-        bmpGuard = BitmapFactory.decodeResource(getResources(), R.drawable.halloween);
-        totalGuards = this.getWidth()/bmpGuard.getWidth();
+
+        guards.clear();
+        totalGuards = this.getWidth()/mBmpGuard.getWidth();
 
         guardIconWidth = this.getWidth()/totalGuards;
 
@@ -338,36 +354,99 @@ public class GameView extends SurfaceView {
         for(int i = 0; i < totalGuards; i++)
         {
             int y = i*guardIconWidth;
-            Guard g = new Guard(this, bmpGuard, x, y, guardIconWidth);
+            Guard g = new Guard(this, mBmpGuard, x, y, guardIconWidth);
             guards.add(g);
         }
         this.guardBorder = this.getHeight() - guardIconWidth;
+    }
+
+    private void printHelpImage(Canvas canvas)
+    {
+        Paint hPaint = new Paint();
+        hPaint.setTextSize(40);
+        hPaint.setColor(Color.CYAN);
+        hPaint.setTextAlign(Paint.Align.LEFT);
+
+        int picX = (this.getHeight() - bmpGens.getHeight())/2;
+        int picY = (this.getWidth() - bmpGens.getWidth())/2;
+
+        int y = picY - (int)(((System.currentTimeMillis() - mStartTime)/HELP_INTERVAL)*picY);
+        canvas.drawBitmap(bmpGens,picY, picX, hPaint);
+//        canvas.drawBitmap(bmpGens,y, picX, hPaint);
+
+        String str1 = "Protect Pumpkin";
+//        String str1 = "Protect bottom items";1
+//        String str2 = "Tap enemy to destroy";
+
+        canvas.drawText(str1, (this.getWidth()/2) - 200, picX - 130 > 0 ? picX - 130 : 0,hPaint);
+//        canvas.drawText(str2, (this.getWidth()/2) - 200, picX - 50,hPaint);
     }
 
     private boolean printHelp(Canvas canvas)
     {
         if(System.currentTimeMillis() - mStartTime < HELP_INTERVAL)
         {
-            Paint hPaint = new Paint();
-            hPaint.setTextSize(40);
-            hPaint.setColor(Color.CYAN);
-            hPaint.setTextAlign(Paint.Align.LEFT);
-
-            int picX = (this.getHeight() - bmpGens.getHeight())/2;
-            int picY = (this.getWidth() - bmpGens.getWidth())/2;
-            canvas.drawBitmap(bmpGens,picY, picX, hPaint);
-
-            String str1 = "Protect bottom items";
-            String str2 = "Tap enemy to destroy";
-
-            canvas.drawText(str1, (this.getWidth()/2) - 200, picX - 130 > 0 ? picX - 130 : 0,hPaint);
-            canvas.drawText(str2, (this.getWidth()/2) - 200, picX - 50,hPaint);
-
-//            Rect dst = new Rect(10, 50, 210, 350);
-//            canvas.drawBitmap(bmpGens, null, dst, null);
+//            gameOverMode(canvas);
+            if(mIsGameOver)
+            {
+               init();
+            }
+            printHelpImage(canvas);
             return true;
         }
         return false;
+    }
+
+    private void checkContinue(int x, int y)
+    {
+        int startX = this.getHeight()/4;
+        int size = this.getWidth()/4;
+
+        int xPos = startX + size * 2;
+        int yPos = size;
+
+        if(x <= xPos + size && x >= xPos && y <= yPos + size && y >= yPos)
+        {
+            if(mIsGameOver)
+            {
+                createEnemy(this.mLevel);
+                createGuards();
+                mIsGameOver = false;
+
+            }
+        }
+    }
+
+    private void checkReset(int x, int y)
+    {
+        int startX = this.getHeight()/4;
+        int size = this.getWidth()/4;
+
+        int xPos = startX + size * 2;
+        int yPos = size * 2;
+
+        if(x <= xPos + size && x >= xPos && y <= yPos + size && y >= yPos)
+        {
+            if(mIsGameOver)
+            {
+                init();
+            }
+        }
+    }
+
+    private void gameOverMode(Canvas canvas)
+    {
+        int startX = this.getHeight()/4;
+        int size = this.getWidth()/4;
+        int startY = size;
+
+        Rect dst = new Rect(startY, startX, startY + size * 2, startX + size * 2);
+        canvas.drawBitmap(bmpSkull, null, dst, null);
+
+        Rect repeatDst = new Rect(startY, startX + size * 2, startY + size, startX + size * 3);
+        canvas.drawBitmap(mRedo, null, repeatDst, null);
+        Rect quitDst = new Rect(startY + size, startX + size * 2, startY + size * 2, startX + size * 3);
+        canvas.drawBitmap(mReset, null, quitDst, null);
     }
 
     @Override
@@ -377,12 +456,9 @@ public class GameView extends SurfaceView {
         {
             return;
         }
-        if(isGameOver)
+        if(mIsGameOver)
         {
-            int x = (this.getWidth()/2) - 200;
-            int y = (this.getHeight()/2) - 200;
-            Rect dst = new Rect(x, y, x + 400, y + 400);
-            canvas.drawBitmap(bmpSkull, null, dst, null);
+            gameOverMode(canvas);
         }
         else
         {
@@ -432,7 +508,7 @@ public class GameView extends SurfaceView {
         green.setColor(Color.CYAN);
         green.setStyle(Paint.Style.FILL);
         Rect rec = new Rect();
-        rec.set(0,60,this.getWidth(),80);
+        rec.set(0,60,this.getWidth(),mTop);
         canvas.drawRect(rec,green);
         Paint who = new Paint();
         who.setTextSize(25);
@@ -464,6 +540,10 @@ public class GameView extends SurfaceView {
                         break;
                     }
                 }
+                int xPos = (int)y;
+                int yPos = (int)x;
+                checkReset(xPos, yPos);
+                checkContinue(xPos, yPos);
             }
         }
         return true;
@@ -481,7 +561,7 @@ public class GameView extends SurfaceView {
             }
             if(!mLevelPassFlag)
             {
-                if(enemies.size() == 0 && !isGameOver)
+                if(enemies.size() == 0 && !mIsGameOver)
                 {
                     mLevelPassFlag = true;
                     // level++;
@@ -511,8 +591,8 @@ public class GameView extends SurfaceView {
             int picY = (this.getWidth() - bmpGens.getWidth())/2;
             canvas.drawBitmap(bmpGens,picY, picX, hPaint);
 
-            String str = "Level " + level + " passed!";
-            canvas.drawText(str, (this.getWidth() / 2) - 200, picX - 130 > 0 ? picX - 130 : 0,hPaint);
+            String str = "Level " + level;
+            canvas.drawText(str, (this.getWidth() / 2) - 200, picX - 150 > 0 ? picX - 150 : 0,hPaint);
             return true;
         }
         return false;
