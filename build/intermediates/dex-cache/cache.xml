@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="D:\coding_practise\android_game_defender\app\build\intermediates\incremental-runtime-classes\debug\instant-run.jar"
+        jumboMode="true"
+        revision="24.0.2"
+        sha1="ca877fe6d908905ad407f1c8985ca31a8b4789e6">
+        <dex dex="D:\coding_practise\android_game_defender\app\build\intermediates\pre-dexed\debug\instant-run_cc0769b53ae420c2af7b5897f1bd64343ab3777c.jar" />
+    </item>
+    <item
+        jar="D:\coding_practise\android_game_defender\app\build\intermediates\incremental-classes\debug\instant-run-bootstrap.jar"
+        jumboMode="true"
+        revision="24.0.2"
+        sha1="c5566ccdd64ac652ba866d697758fb56f83b7250">
+        <dex dex="D:\coding_practise\android_game_defender\app\build\intermediates\pre-dexed\debug\instant-run-bootstrap_537efd85267025236b4b8216b40966ef6f71b33e.jar" />
+    </item>
+
+</items>

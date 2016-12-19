@@ -43,6 +43,10 @@ public class GameView extends SurfaceView {
     private Bitmap mBmpComputer;
     private Bitmap mRedo;
     private Bitmap mReset;
+    private Bitmap mCliff;
+    private Bitmap mFrank;
+    private Bitmap mNeeraj;
+    private Bitmap mRitch;
 
 
     private List<Enemy> enemies = new ArrayList<Enemy>();
@@ -67,7 +71,7 @@ public class GameView extends SurfaceView {
     private final static String[][] levels = {
             {},
             /** level id, enemy type, enemy number, is random position    */
-            {"1", EnemyConst.DIAMOND, "20", Boolean.toString(false)},
+            {"1", EnemyConst.DIAMOND, "5", Boolean.toString(false), "30"},
             {"1", EnemyConst.BASKETBALL, "2", Boolean.toString(false)},
 
             {"2", EnemyConst.DIAMOND, "20", Boolean.toString(true), "30"},
@@ -182,6 +186,11 @@ public class GameView extends SurfaceView {
 
         mRedo = BitmapFactory.decodeResource(getResources(), R.drawable.reset);
         mReset = BitmapFactory.decodeResource(getResources(), R.drawable.close);
+
+        mCliff = BitmapFactory.decodeResource(getResources(), R.drawable.cliff);
+        mFrank = BitmapFactory.decodeResource(getResources(), R.drawable.frank);
+        mNeeraj = BitmapFactory.decodeResource(getResources(), R.drawable.neeraj);
+        mRitch = BitmapFactory.decodeResource(getResources(), R.drawable.ritch);
     }
 
     public Bitmap getBitMap(String name)
@@ -346,7 +355,8 @@ public class GameView extends SurfaceView {
     {
 
         guards.clear();
-        totalGuards = this.getWidth()/mBmpGuard.getWidth();
+//        totalGuards = this.getWidth()/mBmpGuard.getWidth();
+        totalGuards = 4;
 
         guardIconWidth = this.getWidth()/totalGuards;
 
@@ -354,7 +364,19 @@ public class GameView extends SurfaceView {
         for(int i = 0; i < totalGuards; i++)
         {
             int y = i*guardIconWidth;
-            Guard g = new Guard(this, mBmpGuard, x, y, guardIconWidth);
+            Guard g = null;
+            if(0 == i){
+                g = new Guard(this, mCliff, x, y, guardIconWidth);
+            }else if(1 == i){
+                g = new Guard(this, mFrank, x, y, guardIconWidth);
+            }else if(2 == i){
+                g = new Guard(this, mNeeraj, x, y, guardIconWidth);
+            }else if(3 == i){
+                g = new Guard(this, mRitch, x, y, guardIconWidth);
+            }else{
+                g = new Guard(this, mBmpGuard, x, y, guardIconWidth);
+            }
+
             guards.add(g);
         }
         this.guardBorder = this.getHeight() - guardIconWidth;
@@ -374,7 +396,7 @@ public class GameView extends SurfaceView {
         canvas.drawBitmap(bmpGens,picY, picX, hPaint);
 //        canvas.drawBitmap(bmpGens,y, picX, hPaint);
 
-        String str1 = "Protect Pumpkin";
+        String str1 = "Protect Zafin people";
 //        String str1 = "Protect bottom items";1
 //        String str2 = "Tap enemy to destroy";
 
